@@ -6,9 +6,17 @@ const router = express.Router();
 
 /**
  * @swagger
+ * tags:
+ *   - name: Health
+ *     description: Service health
+ */
+
+/**
+ * @swagger
  * /:
  *   get:
  *     summary: Health endpoint
+ *     tags: [Health]
  *     responses:
  *       200:
  *         description: Service health check passed

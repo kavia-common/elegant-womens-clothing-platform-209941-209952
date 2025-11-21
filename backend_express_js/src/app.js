@@ -1,25 +1,35 @@
 const cors = require('cors');
 const express = require('express');
-const routes = require('./routes');
+const dotenv = require('dotenv');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('../swagger');
+const routes = require('./routes');
+const authRoutes = require('./routes/auth');
+const productRoutes = require('./routes/products');
+const orderRoutes = require('./routes/orders');
+
+dotenv.config();
 
 // Initialize express app
 const app = express();
 
+// CORS from env
+const corsOrigin = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',').map(s => s.trim()) : '*';
 app.use(cors({
-  origin: '*',
+  origin: corsOrigin,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.set('trust proxy', true);
-app.use('/docs', swaggerUi.serve, (req, res, next) => {
-  const host = req.get('host');           // may or may not include port
-  let protocol = req.protocol;          // http or https
 
-  const actualPort = req.socket.localPort;
+// Swagger with dynamic server URL for accurate docs
+app.use('/docs', swaggerUi.serve, (req, res, next) => {
+  const host = req.get('host');
+  let protocol = req.protocol;
+
+  const actualPort = req.socket?.localPort;
   const hasPort = host.includes(':');
-  
+
   const needsPort =
     !hasPort &&
     ((protocol === 'http' && actualPort !== 80) ||
@@ -30,9 +40,7 @@ app.use('/docs', swaggerUi.serve, (req, res, next) => {
   const dynamicSpec = {
     ...swaggerSpec,
     servers: [
-      {
-        url: `${protocol}://${fullHost}`,
-      },
+      { url: `${protocol}://${fullHost}` },
     ],
   };
   swaggerUi.setup(dynamicSpec)(req, res, next);
@@ -43,10 +51,29 @@ app.use(express.json());
 
 // Mount routes
 app.use('/', routes);
+app.use('/auth', authRoutes);
+app.use('/products', productRoutes);
+app.use('/orders', orderRoutes);
 
 // Error handling middleware
+// PUBLIC_INTERFACE
+/**
+ * Global error handler.
+ * Returns 400 for validation errors and 500 for unexpected errors.
+ */
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  // Joi validation error
+  if (err && err.isJoi) {
+    return res.status(400).json({
+      status: 'error',
+      message: err.details?.map(d => d.message).join(', ') || 'Validation error',
+    });
+  }
+  // Known error with status
+  if (err && err.status) {
+    return res.status(err.status).json({ status: 'error', message: err.message });
+  }
+  console.error(err?.stack || err);
   res.status(500).json({
     status: 'error',
     message: 'Internal Server Error',
