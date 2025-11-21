@@ -8,7 +8,9 @@
     "dev": "nodemon src/server.js",
     "test": "jest",
     "lint": "eslint .",
-    "gen:openapi": "node generate_openapi.js"
+    "gen:openapi": "node generate_openapi.js",
+    "db:schema": "node scripts/run_db_schema.js",
+    "db:seed": "node scripts/run_db_seed.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",

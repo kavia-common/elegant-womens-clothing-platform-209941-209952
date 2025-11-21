@@ -8,17 +8,27 @@ const authRoutes = require('./routes/auth');
 const productRoutes = require('./routes/products');
 const orderRoutes = require('./routes/orders');
 
+/**
+ * Load environment variables from .env for:
+ * - CORS_ORIGIN (single or comma-separated list)
+ * - JWT_SECRET, JWT_EXPIRES_IN
+ * - DATABASE_URL or PG* variables for PostgreSQL
+ */
 dotenv.config();
 
 // Initialize express app
 const app = express();
 
-// CORS from env
-const corsOrigin = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',').map(s => s.trim()) : '*';
+// CORS from env (fallback to '*' only in development when not specified)
+const rawOrigin = process.env.CORS_ORIGIN;
+const corsOrigin = rawOrigin
+  ? rawOrigin.split(',').map((s) => s.trim())
+  : (process.env.NODE_ENV === 'development' ? '*' : []);
 app.use(cors({
   origin: corsOrigin,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
 }));
 app.set('trust proxy', true);
 

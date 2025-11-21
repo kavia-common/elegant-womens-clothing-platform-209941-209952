@@ -1,10 +1,11 @@
 const app = require('./app');
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 const HOST = process.env.HOST || '0.0.0.0';
 
 const server = app.listen(PORT, HOST, () => {
-  console.log(`Server running at http://${HOST}:${PORT}`);
+  const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
+  console.log(`Server running at ${protocol}://${HOST}:${PORT}`);
 });
 
   // Graceful shutdown

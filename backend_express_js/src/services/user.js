@@ -8,6 +8,9 @@ const SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS || 10);
 function generateToken(user) {
   const payload = { id: user.id, email: user.email, name: user.name, role: user.role || 'user' };
   const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
+  if (!process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET is not set in environment variables');
+  }
   return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn });
 }
 
